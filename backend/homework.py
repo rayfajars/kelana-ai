@@ -1,12 +1,14 @@
-def print_trip_summary(destination, Japan, days, budget, USD, December):
-    print("========================")
-    print("KelanaAI")
-    print("========================")
-    print(f"Destination : {destination}")
-    print(f"Country     : {Japan}")
-    print(f"Days        : {days}")
-    print(f"Budget      : {budget}")
-    print(f"Currency    : {USD}")
-    print(f"Month      : {December}")
+from services.trip_service import get_travel_season
 
-print_trip_summary("Japan","Japan", 5, 1500, "USD", "December")
+
+def print_trip_summary(destination, days, budget, month):
+    season = get_travel_season(month)
+
+    print(f"Destination  : {destination}")
+    print(f"Days         : {days}")
+    print(f"Budget       : {budget} USD")
+    print(f"Travel Month : {month}")
+    print(f"Season       : {season}")
+
+
+print_trip_summary("Japan", 5, 1500, "December")

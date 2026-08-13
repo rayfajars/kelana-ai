@@ -92,24 +92,28 @@ from services.trip_service import (
     calculate_daily_budget,
     get_trip_category,
     get_transportation,
+    get_travel_season,
     recommended_places,
 )
 
 
-def print_trip_summary(destination, days, budget):
+def print_trip_summary(destination, days, budget, month="December"):
     daily_budget = calculate_daily_budget(budget, days)
     category = get_trip_category(budget)
     transport = get_transportation(category)
+    season = get_travel_season(month)
 
     print("========================================")
     print("KelanaAI")
     print("========================================")
     print()
-    print(f'Destination  = "{destination}"')
-    print(f"Days         = {days}")
-    print(f"Budget       = {budget} USD")
-    print(f'Category     = "{category}"')
-    print(f"Daily Budget = {int(daily_budget)} USD/Day")
+    print(f"Destination  : {destination}")
+    print(f"Days         : {days}")
+    print(f"Budget       : {budget} USD")
+    print(f"Travel Month : {month}")
+    print(f"Season       : {season}")
+    print(f"Category     : {category}")
+    print(f"Daily Budget : {int(daily_budget)} USD/Day")
     print()
     print(f"Recommended Transportation: {transport}")
     print()
@@ -119,7 +123,8 @@ def print_trip_summary(destination, days, budget):
         print(f"- {place}")
 
 
-print_trip_summary("Japan", 5, 1500)
+print_trip_summary("Japan", 5, 1500, "December")
+
 
 
 

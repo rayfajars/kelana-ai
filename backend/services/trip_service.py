@@ -18,6 +18,16 @@ def get_transportation(category):
     return "Unknown"
 
 
+def get_travel_season(month):
+    if month == "December" or month == 12:
+        return "Peak Season"
+    elif month == "June" or month == 6:
+        return "Holiday Season"
+    else:
+        return "Regular Season"
+
+
+
 # ─── 2. ARITHMETIC ──────────────────────────
 def calculate_daily_budget(budget, days):
     return budget / days
