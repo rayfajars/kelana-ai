@@ -47,3 +47,5 @@ recommended_places = [
 
 def get_recommended_places():
     return recommended_places
+
+transportation_list = [ "Bus", "Train", "Flight" ]
