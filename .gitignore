@@ -1,5 +1,7 @@
+.DS_STORE
 .venv/
 backend/.venv/
-.env
-__pycache__/
+backend/__pycache__
+backend/services/__pycache__
 *.pyc
+

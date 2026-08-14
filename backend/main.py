@@ -4,6 +4,7 @@ from services.trip_service import (
     calculate_daily_budget,
     get_trip_category,
     get_transportation,
+    recommended_places
 )
 
 class TripRequest(BaseModel):
@@ -53,4 +54,7 @@ def create_trip(request: TripRequest):
 # GET endpoint – list all valid trip categories
 @app.get("/api/v1/trip-categories")
 def list_trip_categories():
-    return ["Backpacker", "Standard", "Luxury"]
+    return recommended_places
+
+
+# HOME WORK
