@@ -63,3 +63,8 @@ def list_trip_categories():
 @app.get("/api/v1/transportation")
 def list_transportation():
     return transportation_list
+
+# GET endpoint – list all valid trip categories
+@app.get("/api/v1/recommendations")
+def list_recommendations():
+    return get_recommended_places()
