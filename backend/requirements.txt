@@ -5,3 +5,5 @@ uvicorn==0.32.1
 sqlalchemy==2.0.36 # the orm
 psycopg2-binary==2.9.10 # the driver for postgres
 python-dotenv==1.0.0 # load .env variables
+
+boto3==1.43.56
