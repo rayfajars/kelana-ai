@@ -52,6 +52,7 @@ def create_trip(request: TripRequest):
         category     = category,
         daily_budget = daily_budget,
         ai_recommendation = ai_recommendation,
+        travel_style= request.travel_style
     )
 
     # save to PostgreSQL
@@ -111,6 +112,30 @@ def update_trip(trip_id: int, request: TripRequest):
     trip.budget       = request.budget
     trip.category     = get_trip_category(request.budget)
     trip.daily_budget = calculate_daily_budget(request.budget, request.days)
+    trip.travel_style = request.travel_style
+    db.commit()
+    db.refresh(trip)
+    db.close()
+    return trip
+
+
+# POST endpoint – generate & persist AI recommendation for an existing trip
+@app.post("/api/v1/trips/{trip_id}/generate")
+def generate_trip_recommendation(trip_id: int):
+    db = SessionLocal()
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if trip is None:
+        db.close()
+        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+
+    ai_rec = get_ai_recommendation(
+        days=trip.days,
+        destination=trip.destination,
+        budget=trip.budget,
+        travel_style=trip.travel_style,
+    )
+
+    trip.ai_recommendation = ai_rec
     db.commit()
     db.refresh(trip)
     db.close()
