@@ -19,6 +19,10 @@ TRAVEL_PLANNER_PROMPT = (
     "Plan a {days}-day itinerary for {destination}.\n"
     "Budget: USD {budget}\n"
     "Travel Style: {travel_style}.\n"
+    "For each day, provide a structured plan with:\n"
+    "1. Morning: 2-3 morning activities.\n"
+    "2. Afternoon: Cultural sites and experiences.\n"
+    "3. Evening: Dinner spots and nightlife suggestions.\n"
     "Give the answer with markdown format."
 )
 
