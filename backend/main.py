@@ -15,6 +15,15 @@ from services.bedrock_service import get_ai_recommendation
 
 app = FastAPI()
 
+# CORS – allow Next.js frontend to call this API
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # SESSION 4
 from models.trip import Trip
 from database import SessionLocal, init_db
