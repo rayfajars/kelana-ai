@@ -15,7 +15,7 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: "Geist", "Inter", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), "Geist", "Inter", system-ui, -apple-system, sans-serif;
 }
 
 /* Spinner animation — Tailwind doesn't have border-top-color utility */
