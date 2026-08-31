@@ -215,5 +215,5 @@ def ask(request: AskRequest):
     return {
         "question": request.question,
         "answer": result["answer"],
-        "sources": result["sources"],
+        "source": result["source"],
     }

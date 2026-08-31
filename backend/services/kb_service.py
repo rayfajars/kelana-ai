@@ -41,21 +41,29 @@ def retrieve_and_generate(query: str) -> dict:
     )
 
     snippets = []
-    sources = []
+    source = []
+    seen_docs = set()
     for result in response.get("retrievalResults") or []:
         text = (result.get("content") or {}).get("text", "").strip()
         if not text:
             continue
         snippets.append(text)
 
-        metadata = result.get("metadata") or {}
-        uri = ((result.get("location") or {}).get("s3Location") or {}).get("uri") or ""
-        label = metadata.get("_document_title") or uri.rsplit("/", 1)[-1]
-        if label and label not in sources:
-            sources.append(label)
+        document_id = result.get("documentId")
+        if document_id in seen_docs:
+            continue
+        seen_docs.add(document_id)
+        source.append(
+            {
+                "document_id": document_id,
+                "location": result.get("location"),
+                "metadata": result.get("metadata"),
+                "score": result.get("score"),
+            }
+        )
 
     if not snippets:
-        return {"answer": NOT_FOUND_ANSWER, "sources": []}
+        return {"answer": NOT_FOUND_ANSWER, "source": []}
 
     context = "\n\n".join(snippets)
     prompt = (
@@ -72,4 +80,4 @@ def retrieve_and_generate(query: str) -> dict:
         messages=[{"role": "user", "content": [{"text": prompt}]}],
     )
     answer = generated["output"]["message"]["content"][0]["text"]
-    return {"answer": answer, "sources": sources}
+    return {"answer": answer, "source": source}

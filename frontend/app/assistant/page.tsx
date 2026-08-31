@@ -3,12 +3,12 @@
 import { FormEvent, useState } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { askAssistant } from "@/services/askService";
+import { askAssistant, sourceTitle, type AskSource } from "@/services/askService";
 
 export default function AssistantPage() {
   const [question, setQuestion] = useState("Can I bring medication into Japan?");
   const [answer, setAnswer] = useState<string | null>(null);
-  const [sources, setSources] = useState<string[]>([]);
+  const [sources, setSources] = useState<AskSource[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,11 +25,7 @@ export default function AssistantPage() {
     try {
       const result = await askAssistant(text);
       setAnswer(result.answer);
-      setSources(
-        (result.sources ?? []).map((source) =>
-          typeof source === "string" ? source : String((source as { title?: string }).title ?? "")
-        ).filter(Boolean)
-      );
+      setSources(result.source ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to get an answer.");
     } finally {
@@ -88,17 +84,20 @@ export default function AssistantPage() {
                 <hr className="my-4 border-emerald-200" />
                 <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-800">Source</p>
                 <ul className="mt-3 flex flex-col gap-2">
-                  {sources.map((source) => (
+                  {sources.map((item) => {
+                    const title = sourceTitle(item);
+                    return (
                     <li
-                      key={source}
+                      key={item.document_id || title}
                       className="inline-flex items-center gap-2.5 rounded-xl bg-white/80 border border-emerald-100 px-3 py-2"
                     >
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                        {source.split(".").pop()?.toUpperCase() ?? "DOC"}
+                        {title.split(".").pop()?.toUpperCase() ?? "DOC"}
                       </span>
-                      <span className="text-sm font-medium text-slate-800 break-all">{source}</span>
+                      <span className="text-sm font-medium text-slate-800 break-all">{title}</span>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </>
             )}
