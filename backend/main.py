@@ -1,8 +1,12 @@
+import os
+
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI,HTTPException
 
 # pyrefly: ignore [missing-import]
 from pydantic import BaseModel
+# pyrefly: ignore [missing-import]
+from dotenv import load_dotenv
 from services.trip_service import (
     calculate_daily_budget,
     get_trip_category,
@@ -12,14 +16,15 @@ from services.trip_service import (
 )
 from services.bedrock_service import get_ai_recommendation
 
+load_dotenv()
 
 app = FastAPI()
 
-# CORS – allow Next.js frontend to call this API
+# CORS – read FRONTEND_URL from .env so production only needs a Vercel URL change
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],
     allow_methods=["*"],
     allow_headers=["*"],
 )
