@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ItineraryView } from "@/components/ItineraryView";
+import { RequireAuth } from "@/components/RequireAuth";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { categoryBadgeClass } from "@/lib/itinerary";
-import { getToken } from "@/lib/auth";
 import { formatUsd } from "@/lib/tripDisplay";
 import { getTrip } from "@/services/tripService";
 import type { Trip } from "@/types/trip";
@@ -20,10 +20,6 @@ export default function TripDetailPage() {
   const [missing, setMissing] = useState(false);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace("/login");
-      return;
-    }
     if (!Number.isFinite(tripId)) {
       setMissing(true);
       return;
@@ -41,6 +37,7 @@ export default function TripDetailPage() {
   }, [router, tripId]);
 
   return (
+    <RequireAuth>
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <SiteHeader current="trips" />
 
@@ -95,6 +92,7 @@ export default function TripDetailPage() {
 
       <SiteFooter />
     </div>
+    </RequireAuth>
   );
 }
 

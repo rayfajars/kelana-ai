@@ -116,6 +116,21 @@ def list_trips(user: User = Depends(get_current_user)):
     return trips
 
 
+def _load_trip(db, trip_id: int) -> Trip:
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if trip is None:
+        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+    return trip
+
+
+def _reject_if_not_owner(trip: Trip, user: User) -> None:
+    if trip.user_id != user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You cannot modify another user's trip",
+        )
+
+
 @app.get("/api/v1/trips/{trip_id}")
 def get_trip(trip_id: int, user: User = Depends(get_current_user)):
     db = SessionLocal()
@@ -133,34 +148,34 @@ def get_trip(trip_id: int, user: User = Depends(get_current_user)):
 @app.delete("/api/v1/trips/{trip_id}")
 def delete_trip(trip_id: int, user: User = Depends(get_current_user)):
     db = SessionLocal()
-    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
-    if trip is None:
+    try:
+        trip = _load_trip(db, trip_id)
+        _reject_if_not_owner(trip, user)
+        db.delete(trip)
+        db.commit()
+        return {"message": f"Trip {trip_id} deleted"}
+    finally:
         db.close()
-        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
-    db.delete(trip)
-    db.commit()
-    db.close()
-    return {"message": f"Trip {trip_id} deleted"}
 
 # PUT endpoint – update budget, recalculate category + daily_budget
 @app.put("/api/v1/trips/{trip_id}")
 def update_trip(trip_id: int, request: TripRequest, user: User = Depends(get_current_user)):
     db = SessionLocal()
-    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
-    if trip is None:
+    try:
+        trip = _load_trip(db, trip_id)
+        _reject_if_not_owner(trip, user)
+        # update fields & recalculate
+        trip.destination  = request.destination
+        trip.days         = request.days
+        trip.budget       = request.budget
+        trip.category     = get_trip_category(request.budget)
+        trip.daily_budget = calculate_daily_budget(request.budget, request.days)
+        trip.travel_style = request.travel_style
+        db.commit()
+        db.refresh(trip)
+        return trip
+    finally:
         db.close()
-        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
-    # update fields & recalculate
-    trip.destination  = request.destination
-    trip.days         = request.days
-    trip.budget       = request.budget
-    trip.category     = get_trip_category(request.budget)
-    trip.daily_budget = calculate_daily_budget(request.budget, request.days)
-    trip.travel_style = request.travel_style
-    db.commit()
-    db.refresh(trip)
-    db.close()
-    return trip
 
 
 # POST endpoint – generate & persist AI recommendation for an existing trip

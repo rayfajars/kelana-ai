@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { RequireAuth } from "@/components/RequireAuth";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { generateTrip } from "@/services/tripService";
@@ -58,6 +59,7 @@ export default function Home() {
     "w-full min-h-12 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 text-sm outline-none transition duration-200 focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10";
 
   return (
+    <RequireAuth>
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <SiteHeader current="home" />
 
@@ -279,5 +281,6 @@ export default function Home() {
 
       <SiteFooter />
     </div>
+    </RequireAuth>
   );
 }

@@ -1,30 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/components/AuthProvider";
 import { getMe } from "@/services/authService";
-import { getToken } from "@/lib/auth";
 
 export default function ProfilePage() {
-  const router = useRouter();
   const { user, ready, setUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
-    if (!getToken()) {
-      router.replace("/login");
-      return;
-    }
     getMe()
       .then(setUser)
       .catch(() => setError("Unable to load profile."));
-  }, [ready, router, setUser]);
+  }, [ready, setUser]);
 
   return (
+    <RequireAuth>
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <SiteHeader current="profile" />
       <main className="flex-1 max-w-xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10">
@@ -54,5 +49,6 @@ export default function ProfilePage() {
       </main>
       <SiteFooter />
     </div>
+    </RequireAuth>
   );
 }

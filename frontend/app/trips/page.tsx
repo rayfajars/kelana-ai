@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { RequireAuth } from "@/components/RequireAuth";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TripDashboard } from "@/components/TripDashboard";
-import { getToken } from "@/lib/auth";
 import { getTrips } from "@/services/tripService";
 import type { Trip } from "@/types/trip";
 import Link from "next/link";
@@ -17,11 +17,6 @@ export default function TripsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace("/login");
-      return;
-    }
-
     getTrips()
       .then((data) => {
         setTrips([...data].sort((a, b) => b.id - a.id));
@@ -37,6 +32,7 @@ export default function TripsPage() {
   }, [router]);
 
   return (
+    <RequireAuth>
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <SiteHeader current="trips" />
 
@@ -87,5 +83,6 @@ export default function TripsPage() {
 
       <SiteFooter />
     </div>
+    </RequireAuth>
   );
 }
