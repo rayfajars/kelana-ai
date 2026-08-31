@@ -41,6 +41,10 @@ export default function Home() {
       });
       router.push(`/trips/${trip.id}`);
     } catch (err) {
+      if (err instanceof Error && err.message === "Unauthorized") {
+        router.push("/login");
+        return;
+      }
       setError(
         err instanceof Error ? err.message : "Unable to generate itinerary. Please try again."
       );

@@ -1,7 +1,7 @@
 import os
 
 # pyrefly: ignore [missing-import]
-from fastapi import FastAPI,HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 
 # pyrefly: ignore [missing-import]
 from pydantic import BaseModel
@@ -31,7 +31,10 @@ app.add_middleware(
 
 # SESSION 4
 from models.trip import Trip
+from models.user import User
 from database import SessionLocal, init_db
+from schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserPublic
+from services.auth_service import get_current_user, login as login_user, register as register_user
 
 class TripRequest(BaseModel):
     destination: str
@@ -46,8 +49,34 @@ class TripRequest(BaseModel):
 init_db()
 
 
+@app.post("/api/v1/auth/register", response_model=UserPublic)
+def register(request: RegisterRequest):
+    user = register_user(request.name, request.email, request.password)
+    return UserPublic(id=user.id, name=user.name, email=user.email)
+
+
+@app.post("/api/v1/auth/login", response_model=TokenResponse)
+def login(request: LoginRequest):
+    return login_user(request.email, request.password)
+
+
+@app.get("/api/v1/auth/me", response_model=UserPublic)
+def me(user: User = Depends(get_current_user)):
+    db = SessionLocal()
+    try:
+        trip_count = db.query(Trip).filter(Trip.user_id == user.id).count()
+        return UserPublic(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            trip_count=trip_count,
+        )
+    finally:
+        db.close()
+
+
 @app.post("/api/v1/trips")
-def create_trip(request: TripRequest):
+def create_trip(request: TripRequest, user: User = Depends(get_current_user)):
     # reuse Session 2 business logic
     daily_budget = calculate_daily_budget(request.budget, request.days)
     category     = get_trip_category(request.budget)
@@ -66,7 +95,8 @@ def create_trip(request: TripRequest):
         category     = category,
         daily_budget = daily_budget,
         ai_recommendation = ai_recommendation,
-        travel_style= request.travel_style
+        travel_style= request.travel_style,
+        user_id=user.id,  # ownership — backend sets this
     )
 
     # save to PostgreSQL
@@ -79,17 +109,17 @@ def create_trip(request: TripRequest):
 
 
 @app.get("/api/v1/trips")
-def list_trips():
+def list_trips(user: User = Depends(get_current_user)):
     db = SessionLocal()
-    trips = db.query(Trip).all()
+    trips = db.query(Trip).filter(Trip.user_id == user.id).all()
     db.close()
     return trips
 
 
 @app.get("/api/v1/trips/{trip_id}")
-def get_trip(trip_id: int):
+def get_trip(trip_id: int, user: User = Depends(get_current_user)):
     db = SessionLocal()
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     db.close()
   # handling not found
     if trip is None:
@@ -101,9 +131,9 @@ def get_trip(trip_id: int):
 # CHALLENGE & HOMEWORK
 # DELETE endpoint – remove a trip by ID
 @app.delete("/api/v1/trips/{trip_id}")
-def delete_trip(trip_id: int):
+def delete_trip(trip_id: int, user: User = Depends(get_current_user)):
     db = SessionLocal()
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     if trip is None:
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
@@ -114,9 +144,9 @@ def delete_trip(trip_id: int):
 
 # PUT endpoint – update budget, recalculate category + daily_budget
 @app.put("/api/v1/trips/{trip_id}")
-def update_trip(trip_id: int, request: TripRequest):
+def update_trip(trip_id: int, request: TripRequest, user: User = Depends(get_current_user)):
     db = SessionLocal()
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     if trip is None:
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
@@ -135,9 +165,9 @@ def update_trip(trip_id: int, request: TripRequest):
 
 # POST endpoint – generate & persist AI recommendation for an existing trip
 @app.post("/api/v1/trips/{trip_id}/generate")
-def generate_trip_recommendation(trip_id: int):
+def generate_trip_recommendation(trip_id: int, user: User = Depends(get_current_user)):
     db = SessionLocal()
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
     if trip is None:
         db.close()
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
