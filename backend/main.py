@@ -15,6 +15,7 @@ from services.trip_service import (
     transportation_list
 )
 from services.bedrock_service import get_ai_recommendation
+from services.kb_service import retrieve_and_generate
 
 load_dotenv()
 
@@ -42,6 +43,10 @@ class TripRequest(BaseModel):
     budget: float
     month: str = "December"
     travel_style: str = "Family"
+
+
+class AskRequest(BaseModel):
+    question: str
 
 
 
@@ -199,3 +204,16 @@ def generate_trip_recommendation(trip_id: int, user: User = Depends(get_current_
     db.refresh(trip)
     db.close()
     return trip
+
+
+@app.post("/api/v1/ask")
+def ask(request: AskRequest):
+    try:
+        result = retrieve_and_generate(request.question)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {
+        "question": request.question,
+        "answer": result["answer"],
+        "sources": result["sources"],
+    }

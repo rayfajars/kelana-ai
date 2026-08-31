@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 
-export function AuthNav({ current }: { current?: "home" | "trips" | "profile" }) {
+export function AuthNav({ current }: { current?: "home" | "trips" | "profile" | "assistant" }) {
   const { user, ready, logout } = useAuth();
 
   if (!ready) {

@@ -14,6 +14,9 @@ export function SiteFooter() {
           <Link href="/#plan" className="hover:text-blue-600 transition-colors">
             Plan a Trip
           </Link>
+          <Link href="/assistant" className="hover:text-blue-600 transition-colors">
+            Assistant
+          </Link>
           <Link href="/trips" className="hover:text-blue-600 transition-colors">
             My Trips
           </Link>
