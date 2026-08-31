@@ -33,13 +33,13 @@ export default function Home() {
     setSubmittedMeta(snapshot);
 
     try {
-      await generateTrip({
+      const trip = await generateTrip({
         destination: snapshot.destination,
         budget: Number(snapshot.budget),
         days: Number(snapshot.days),
         travel_style: snapshot.travelStyle,
       });
-      router.push("/trips");
+      router.push(`/trips/${trip.id}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to generate itinerary. Please try again."
@@ -166,6 +166,7 @@ export default function Home() {
                   >
                     <option value="Family">👨‍👩‍👧‍👦 Family</option>
                     <option value="Solo">🎒 Solo</option>
+                    <option value="Couple">💑 Couple</option>
                     <option value="Backpacker">🏕️ Backpacker</option>
                     <option value="Luxury">✨ Luxury</option>
                     <option value="Adventure">🧗 Adventure</option>

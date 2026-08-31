@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TripCard } from "@/components/TripCard";
 import type { Trip } from "@/types/trip";
 
 type SortMode = "latest" | "oldest" | "budget";
 
+const PAGE_SIZE = 10;
+
 export function TripDashboard({ trips }: { trips: Trip[] }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("latest");
+  const [page, setPage] = useState(1);
 
   const visibleTrips = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -30,6 +33,17 @@ export function TripDashboard({ trips }: { trips: Trip[] }) {
     }
     return sorted;
   }, [trips, query, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleTrips.length / PAGE_SIZE));
+  const pagedTrips = visibleTrips.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, sort]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     <div className="space-y-5">
@@ -59,9 +73,44 @@ export function TripDashboard({ trips }: { trips: Trip[] }) {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {visibleTrips.map((trip) => (
+          {pagedTrips.map((trip) => (
             <TripCard key={trip.id} trip={trip} />
           ))}
+        </div>
+      )}
+
+      {visibleTrips.length > PAGE_SIZE && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 disabled:opacity-40 hover:border-blue-200"
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setPage(n)}
+              className={`min-w-10 px-3 py-2 rounded-xl text-sm font-semibold ${
+                n === page
+                  ? "bg-blue-600 text-white"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-blue-200"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 disabled:opacity-40 hover:border-blue-200"
+          >
+            Next
+          </button>
         </div>
       )}
 

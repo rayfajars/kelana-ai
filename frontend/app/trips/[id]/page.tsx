@@ -2,6 +2,7 @@ import { ItineraryView } from "@/components/ItineraryView";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { categoryBadgeClass } from "@/lib/itinerary";
+import { formatUsd } from "@/lib/tripDisplay";
 import { getTrip } from "@/services/tripService";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,7 +56,7 @@ export default async function TripDetailPage({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <SummaryCard label="Destination" value={trip.destination} />
-          <SummaryCard label="Budget" value={`USD ${Number(trip.budget).toLocaleString()}`} />
+          <SummaryCard label="Budget" value={formatUsd(trip.budget)} />
           <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5">
             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Category</p>
             <span
