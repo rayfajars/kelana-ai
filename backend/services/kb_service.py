@@ -69,7 +69,9 @@ def retrieve_and_generate(query: str) -> dict:
     prompt = (
         "Answer the question using only the documents below. "
         "If they do not contain the answer, say you could not find it "
-        "in the uploaded documents. Do not use outside knowledge.\n\n"
+        "in the uploaded documents. Do not use outside knowledge.\n"
+        "Format the answer as Markdown: use short headings, bullet lists, "
+        "and **bold** for key facts. Do not wrap the whole answer in a code fence.\n\n"
         f"Documents:\n{context}\n\n"
         f"Question: {query}"
     )

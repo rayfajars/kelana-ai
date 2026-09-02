@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { AuthNav } from "@/components/AuthNav";
 
-export function SiteHeader({ current }: { current?: "home" | "trips" | "profile" | "assistant" }) {
+export function SiteHeader({
+  current,
+}: {
+  current?: "home" | "trips" | "profile" | "assistant" | "chat";
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
@@ -15,7 +19,7 @@ export function SiteHeader({ current }: { current?: "home" | "trips" | "profile"
           </div>
         </Link>
 
-        <nav className="flex items-center gap-2 sm:gap-4 text-sm font-medium">
+        <nav className="flex items-center gap-1 sm:gap-2 text-sm font-medium">
           <Link
             href="/#plan"
             className={`hidden sm:inline px-3 py-1.5 rounded-lg transition-colors ${
@@ -31,6 +35,14 @@ export function SiteHeader({ current }: { current?: "home" | "trips" | "profile"
             }`}
           >
             Assistant
+          </Link>
+          <Link
+            href="/chat"
+            className={`hidden sm:inline px-3 py-1.5 rounded-lg transition-colors ${
+              current === "chat" ? "text-blue-600" : "text-slate-600 hover:text-blue-600"
+            }`}
+          >
+            Chat
           </Link>
           <Link
             href="/trips"

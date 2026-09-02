@@ -16,6 +16,15 @@ from services.trip_service import (
 )
 from services.bedrock_service import get_ai_recommendation
 from services.kb_service import retrieve_and_generate
+from services.chat_service import (
+    create_conversation,
+    delete_conversation,
+    end_conversation,
+    list_conversations,
+    list_messages,
+    rename_conversation,
+    send_message,
+)
 
 load_dotenv()
 
@@ -35,6 +44,14 @@ from models.trip import Trip
 from models.user import User
 from database import SessionLocal, init_db
 from schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserPublic
+from schemas.chat import (
+    ConversationCreated,
+    ConversationPublic,
+    MessagePublic,
+    RenameConversationRequest,
+    SendMessageRequest,
+    SendMessageResponse,
+)
 from services.auth_service import get_current_user, login as login_user, register as register_user
 
 class TripRequest(BaseModel):
@@ -217,3 +234,55 @@ def ask(request: AskRequest):
         "answer": result["answer"],
         "source": result["source"],
     }
+
+
+
+@app.post("/api/v1/conversations", response_model=ConversationCreated, status_code=201)
+def start_conversation(user: User = Depends(get_current_user)):
+    conversation_id = create_conversation(user.id)
+    return ConversationCreated(conversation_id=conversation_id)
+
+
+@app.get("/api/v1/conversations", response_model=list[ConversationPublic])
+def get_conversations(user: User = Depends(get_current_user)):
+    return list_conversations(user.id)
+
+
+@app.patch("/api/v1/conversations/{conversation_id}", response_model=ConversationPublic)
+def patch_conversation(
+    conversation_id: int,
+    request: RenameConversationRequest,
+    user: User = Depends(get_current_user),
+):
+    return rename_conversation(conversation_id, user.id, request.title)
+
+
+@app.post("/api/v1/conversations/{conversation_id}/end", response_model=ConversationPublic)
+def close_conversation(conversation_id: int, user: User = Depends(get_current_user)):
+    return end_conversation(conversation_id, user.id)
+
+
+@app.delete("/api/v1/conversations/{conversation_id}")
+def remove_conversation(conversation_id: int, user: User = Depends(get_current_user)):
+    return delete_conversation(conversation_id, user.id)
+
+
+@app.get(
+    "/api/v1/conversations/{conversation_id}/messages",
+    response_model=list[MessagePublic],
+)
+def get_messages(conversation_id: int, user: User = Depends(get_current_user)):
+    return list_messages(conversation_id, user.id)
+
+
+@app.post(
+    "/api/v1/conversations/{conversation_id}/messages",
+    response_model=SendMessageResponse,
+    status_code=201,
+)
+def post_message(
+    conversation_id: int,
+    request: SendMessageRequest,
+    user: User = Depends(get_current_user),
+):
+    return send_message(conversation_id, user.id, request.content)

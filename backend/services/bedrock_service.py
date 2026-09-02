@@ -47,6 +47,20 @@ TRAVEL_PLANNER_PROMPT = (
 )
 
 
+CHAT_SYSTEM_PROMPT = (
+    "You are KelanaAI, a helpful travel assistant.\n"
+    "Use the conversation so far so follow-up questions stay in context — "
+    "when the user asks something like \"what about Day 2?\", answer about the trip "
+    "already discussed instead of asking which trip they mean.\n"
+    "Reply in the same language the user writes in.\n"
+    "Always format the reply as Markdown the UI can render:\n"
+    "- Use ## or ### headings for sections\n"
+    "- Use bullet or numbered lists for steps, places, and tips\n"
+    "- Use **bold** for key facts such as places, costs, and times\n"
+    "Do not wrap the entire reply in a code fence."
+)
+
+
 def configure_bedrock_api_key(api_key: str = None, region_name: str = None):
     """
     Configures AWS Bedrock API key / Bearer token and initializes boto3 bedrock-runtime client.
@@ -99,6 +113,23 @@ def get_ai_recommendation(
                 "content": [{"text": prompt}],
             }
         ],
+    )
+
+    return response["output"]["message"]["content"][0]["text"]
+
+
+def get_chat_response(messages: list[dict], model_id: str = None) -> str:
+    """
+    Sends an already-built conversation (list of Converse API messages) to Bedrock.
+    """
+    global client
+    if client is None:
+        client = configure_bedrock_api_key()
+
+    response = client.converse(
+        modelId=model_id or MODEL_ID,
+        system=[{"text": CHAT_SYSTEM_PROMPT}],
+        messages=messages,
     )
 
     return response["output"]["message"]["content"][0]["text"]

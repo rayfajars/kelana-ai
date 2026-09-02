@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { askAssistant, sourceTitle, type AskSource } from "@/services/askService";
@@ -76,9 +77,10 @@ export default function AssistantPage() {
         {answer && !loading && (
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
             <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-800">AI Answer</p>
-            <p className="mt-2 text-sm sm:text-base text-slate-800 leading-relaxed whitespace-pre-wrap">
-              {answer}
-            </p>
+            <MarkdownMessage
+              content={answer}
+              className="mt-3 text-sm sm:text-base text-slate-800"
+            />
             {sources.length > 0 && (
               <>
                 <hr className="my-4 border-emerald-200" />
