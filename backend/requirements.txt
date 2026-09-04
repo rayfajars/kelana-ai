@@ -1,6 +1,6 @@
 #  run source ./.venv/bin/activate befor pip install
 # uvicorn main:app --reload
-fastapi==0.115.6
+fastapi[standard]==0.115.6
 uvicorn==0.32.1
 
 sqlalchemy==2.0.36 # the orm
