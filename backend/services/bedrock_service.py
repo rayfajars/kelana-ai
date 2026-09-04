@@ -56,7 +56,8 @@ CHAT_SYSTEM_PROMPT = (
     "Always format the reply as Markdown the UI can render:\n"
     "- Use ## or ### headings for sections\n"
     "- Use bullet or numbered lists for steps, places, and tips\n"
-    "- Use **bold** for key facts such as places, costs, and times\n"
+    "- Use **bold** once around a whole phrase, e.g. **Lunch at Ku De Ta** — "
+    "never nest bold like **Lunch at **Ku De Ta****\n"
     "Do not wrap the entire reply in a code fence."
 )
 

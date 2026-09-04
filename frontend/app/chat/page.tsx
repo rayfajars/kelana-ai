@@ -11,15 +11,80 @@ import {
   deleteConversation,
   endConversation,
   formatConversationDate,
+  formatMessageTime,
   getConversations,
   getMessages,
   renameConversation,
   sendMessage,
+  titleFromFirstMessage,
   type ChatMessage,
   type Conversation,
 } from "@/services/chatService";
 
 const DEFAULT_TITLE = "New conversation";
+const NEAR_BOTTOM_PX = 96;
+
+function DownArrowIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">
+      <path
+        d="M10 4v12m0 0-5-5m5 5 5-5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function MessageRow({ message }: { message: ChatMessage }) {
+  const isUser = message.role === "user";
+
+  return (
+    <div
+      className={`flex max-w-[85%] ${isUser ? "self-end" : "self-start"}`}
+    >
+      <div
+        className={`rounded-2xl px-4 py-3 text-sm ${
+          isUser ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-800"
+        }`}
+      >
+        {isUser ? (
+          <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
+        ) : (
+          <MarkdownMessage content={message.content} />
+        )}
+        <time
+          dateTime={message.created_at}
+          className={`mt-2 block text-[11px] ${isUser ? "text-white/70 text-right" : "text-slate-400"}`}
+        >
+          {formatMessageTime(message.created_at)}
+        </time>
+      </div>
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div
+      className="self-start rounded-2xl bg-slate-100 px-4 py-3"
+      role="status"
+      aria-live="polite"
+      aria-label="KelanaAI is typing"
+    >
+      <div className="flex items-center gap-2">
+        <span className="flex items-center gap-1" aria-hidden="true">
+          <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.32s]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.16s]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" />
+        </span>
+        <span className="text-sm text-slate-500">KelanaAI is typing...</span>
+      </div>
+    </div>
+  );
+}
 
 export default function ChatPage() {
   const router = useRouter();
@@ -36,7 +101,10 @@ export default function ChatPage() {
     { type: "end" } | { type: "delete"; id: number; title: string } | null
   >(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const threadRef = useRef<HTMLDivElement | null>(null);
+  const jumpToLatestRef = useRef(false);
+  const stuckToBottomRef = useRef(true);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
 
   const activeConversation = useMemo(
     () => conversations.find((item) => item.id === activeId) ?? null,
@@ -55,13 +123,39 @@ export default function ChatPage() {
     [router]
   );
 
+  const isNearBottom = useCallback(() => {
+    const thread = threadRef.current;
+    if (!thread) return true;
+    const distance = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
+    return distance <= NEAR_BOTTOM_PX;
+  }, []);
+
+  const updateJumpButton = useCallback(() => {
+    const nearBottom = isNearBottom();
+    stuckToBottomRef.current = nearBottom;
+    setShowJumpToLatest(!nearBottom && messages.length > 0);
+  }, [isNearBottom, messages.length]);
+
+  const scrollThread = useCallback((behavior: ScrollBehavior) => {
+    const thread = threadRef.current;
+    if (!thread) return;
+    thread.scrollTo({ top: thread.scrollHeight, behavior });
+    stuckToBottomRef.current = true;
+    setShowJumpToLatest(false);
+  }, []);
+
   const openConversation = useCallback(
     async (id: number) => {
       setActiveId(id);
       setError(null);
+      setMessages([]);
+      setShowJumpToLatest(false);
+      stuckToBottomRef.current = true;
       setLoadingThread(true);
       try {
-        setMessages(await getMessages(id));
+        const data = await getMessages(id);
+        jumpToLatestRef.current = true;
+        setMessages(data);
       } catch (err) {
         handleFailure(err, "Unable to load this conversation.");
       } finally {
@@ -83,8 +177,22 @@ export default function ChatPage() {
   }, [handleFailure, openConversation]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, sending]);
+    if (loadingThread) return;
+
+    const jump = jumpToLatestRef.current;
+    jumpToLatestRef.current = false;
+    const followThread = jump || sending || stuckToBottomRef.current;
+
+    if (!followThread) {
+      setShowJumpToLatest(messages.length > 0);
+      return;
+    }
+
+    const behavior: ScrollBehavior = jump ? "auto" : "smooth";
+    scrollThread(behavior);
+    const frame = window.requestAnimationFrame(() => scrollThread(behavior));
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages, sending, loadingThread, scrollThread, messages.length]);
 
   async function handleNewConversation() {
     setError(null);
@@ -97,6 +205,8 @@ export default function ChatPage() {
       ]);
       setActiveId(id);
       setMessages([]);
+      setShowJumpToLatest(false);
+      stuckToBottomRef.current = true;
     } catch (err) {
       handleFailure(err, "Unable to start a new conversation.");
     }
@@ -144,7 +254,7 @@ export default function ChatPage() {
       setConversations((prev) =>
         prev.map((item) =>
           item.id === conversationId && item.title === DEFAULT_TITLE
-            ? { ...item, title: text.length > 60 ? `${text.slice(0, 57)}...` : text }
+            ? { ...item, title: titleFromFirstMessage(text) }
             : item
         )
       );
@@ -317,7 +427,10 @@ export default function ChatPage() {
             <section className="rounded-2xl border border-slate-200 bg-white flex flex-col max-h-[75vh]">
               <div className="flex items-start justify-between gap-3 px-5 py-3 border-b border-slate-200">
                 <div className="min-w-0">
-                  <h1 className="truncate text-base font-bold tracking-tight">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                    Conversation
+                  </p>
+                  <h1 className="truncate text-lg font-bold tracking-tight text-slate-900">
                     {activeConversation?.title ?? "KelanaAI Chat"}
                   </h1>
                   <p className="text-xs text-slate-500">
@@ -351,42 +464,40 @@ export default function ChatPage() {
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 flex flex-col gap-3">
-                {loadingThread ? (
-                  <p className="text-sm text-slate-400">Loading messages...</p>
-                ) : messages.length === 0 ? (
-                  <div className="m-auto text-center">
-                    <p className="text-sm font-semibold text-slate-500">Start the conversation</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Try &ldquo;Plan a family trip to Japan.&rdquo; then ask &ldquo;What about Day 2?&rdquo;
-                    </p>
-                  </div>
-                ) : (
-                  messages.map((message) =>
-                    message.role === "user" ? (
-                      <div
-                        key={message.id}
-                        className="max-w-[85%] self-end rounded-2xl bg-blue-600 px-4 py-3 text-sm leading-relaxed text-white whitespace-pre-wrap"
-                      >
-                        {message.content}
-                      </div>
-                    ) : (
-                      <MarkdownMessage
-                        key={message.id}
-                        content={message.content}
-                        className="max-w-[85%] self-start rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-800"
-                      />
-                    )
-                  )
-                )}
+              <div className="relative min-h-0 flex-1">
+                <div
+                  ref={threadRef}
+                  onScroll={updateJumpButton}
+                  className="h-full overflow-y-auto px-4 sm:px-5 py-5 flex flex-col gap-3"
+                >
+                  {loadingThread ? (
+                    <p className="text-sm text-slate-400">Loading messages...</p>
+                  ) : messages.length === 0 ? (
+                    <div className="m-auto text-center">
+                      <p className="text-sm font-semibold text-slate-500">Start the conversation</p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        Try &ldquo;Plan a family trip to Japan.&rdquo; then ask &ldquo;What about Day 2?&rdquo;
+                      </p>
+                    </div>
+                  ) : (
+                    messages.map((message) => (
+                      <MessageRow key={message.id} message={message} />
+                    ))
+                  )}
 
-                {sending && (
-                  <div className="self-start rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-500">
-                    KelanaAI is typing...
-                  </div>
-                )}
+                  {sending && <TypingIndicator />}
+                </div>
 
-                <div ref={bottomRef} />
+                {showJumpToLatest && (
+                  <button
+                    type="button"
+                    title="Jump to latest message"
+                    onClick={() => scrollThread("smooth")}
+                    className="absolute bottom-4 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700 cursor-pointer"
+                  >
+                    <DownArrowIcon />
+                  </button>
+                )}
               </div>
 
               {error && (

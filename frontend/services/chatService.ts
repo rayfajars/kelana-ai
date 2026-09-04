@@ -106,3 +106,34 @@ export function formatConversationDate(value: string): string {
     minute: "2-digit",
   });
 }
+
+export function formatMessageTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+
+  if (sameDay) {
+    return date.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function titleFromFirstMessage(text: string): string {
+  const singleLine = text.split(/\s+/).join(" ").trim();
+  if (singleLine.length <= 60) return singleLine;
+  return `${singleLine.slice(0, 57).trimEnd()}...`;
+}

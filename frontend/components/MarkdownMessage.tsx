@@ -11,6 +11,21 @@ function unwrapMarkdownFence(content: string): string {
   return fenced ? fenced[1].trim() : content;
 }
 
+/** Flatten nested **bold** that LLMs often emit, e.g. **Lunch at **Ku De Ta****. */
+function flattenNestedBold(line: string): string {
+  const match = line.match(/^(\s*(?:[-*+]|\d+\.)\s+)?(\*\*.*\*\*)\s*$/);
+  if (!match) return line;
+
+  const prefix = match[1] ?? "";
+  const inner = match[2].slice(2, -2);
+  if (!inner.includes("**")) return line;
+  return `${prefix}**${inner.replace(/\*\*/g, "")}**`;
+}
+
+function prepareMarkdown(content: string): string {
+  return unwrapMarkdownFence(content).split("\n").map(flattenNestedBold).join("\n");
+}
+
 function buildComponents(tone: Tone): Components {
   const dark = tone === "dark";
   const heading = dark ? "text-white" : "text-slate-900";
@@ -109,7 +124,7 @@ export function MarkdownMessage({
   return (
     <div className={className}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={componentsByTone[tone]}>
-        {unwrapMarkdownFence(content)}
+        {prepareMarkdown(content)}
       </ReactMarkdown>
     </div>
   );
