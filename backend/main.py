@@ -31,6 +31,7 @@ load_dotenv()
 app = FastAPI()
 
 # CORS – read FRONTEND_URL from .env so production only needs a Vercel URL change
+# pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
